@@ -1,6 +1,6 @@
 .{
     .name = .zfortune,
-    .version = "0.0.2",
+    .version = "0.0.3",
     .minimum_zig_version = "0.14.1",
     .fingerprint = 0xbaa56b40164203ce,
     .dependencies = .{},
