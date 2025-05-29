@@ -58,9 +58,7 @@ fn getRandomQuote(ally: std.mem.Allocator, path: []const u8) ![]const u8 {
 
 pub fn main() !void {
     // setup allocator
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){ .backing_allocator = std.heap.smp_allocator };
-    defer if (gpa.deinit() == .leak) @panic("gpa: memory leaked");
-    var arena = std.heap.ArenaAllocator.init(gpa.allocator());
+    var arena = std.heap.ArenaAllocator.init(std.heap.smp_allocator);
     defer arena.deinit();
     const ally = arena.allocator();
     _ = try ally.alloc(u8, 5 * 1024); // pre allocate 5kb
