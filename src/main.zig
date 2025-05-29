@@ -49,7 +49,7 @@ fn getRandomQuote(ally: std.mem.Allocator, path: []const u8) ![]const u8 {
     var quote = try std.ArrayList(u8).initCapacity(ally, header.str_longlen + 1);
     // read twice if ptr points to delimiter
     try file_br.reader().streamUntilDelimiter(quote.writer(), header.str_delim, header.str_longlen + 1);
-    if (quote.items[0] == header.str_delim) {
+    if (quote.items.len == 0) {
         quote.clearRetainingCapacity();
         try file_br.reader().streamUntilDelimiter(quote.writer(), header.str_delim, header.str_longlen + 1);
     }
@@ -63,7 +63,7 @@ pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(gpa.allocator());
     defer arena.deinit();
     const ally = arena.allocator();
-    _ = try ally.alloc(u8, 5 * 1024); // pre allocate 1kb
+    _ = try ally.alloc(u8, 5 * 1024); // pre allocate 5kb
     _ = arena.reset(.retain_capacity);
 
     const FORTUNE_PATH = posix.getenv("FORTUNE_PATH") orelse "/usr/share/fortune";
