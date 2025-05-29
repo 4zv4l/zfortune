@@ -15,8 +15,8 @@ const Strfile = extern struct {
 };
 
 fn getRandomQuote(ally: std.mem.Allocator, path: []const u8) ![]const u8 {
-    log.info("path: '{s}'", .{path});
-    log.info("path: '{s}'", .{path[0 .. path.len - 4]});
+    log.debug("path: '{s}'", .{path});
+    log.debug("path: '{s}'", .{path[0 .. path.len - 4]});
 
     var datfile = try fs.cwd().openFile(path, .{});
     defer datfile.close();
@@ -34,17 +34,17 @@ fn getRandomQuote(ally: std.mem.Allocator, path: []const u8) ![]const u8 {
         .str_delim = @truncate(try datfile_br.reader().readInt(u32, .little)),
     };
     if (header.str_version > 2) return error.BadDatStrFile;
-    log.info("header: {}\n", .{header});
+    log.debug("header: {}\n", .{header});
 
     // load quote ptr table
     const quotes_ptr = try ally.alloc(u32, header.str_numstr - 1);
     defer ally.free(quotes_ptr);
     for (quotes_ptr) |*quote| quote.* = try datfile_br.reader().readInt(u32, .big);
-    log.info("quotes table: {d}", .{quotes_ptr});
+    log.debug("quotes table: {d}", .{quotes_ptr});
 
     // choose random quote and go to quote ptr
     const quote_idx = random.intRangeLessThan(usize, 0, quotes_ptr.len);
-    log.info("quote_idx: {d} => {d}", .{ quote_idx, quotes_ptr[quote_idx] });
+    log.debug("quote_idx: {d} => {d}", .{ quote_idx, quotes_ptr[quote_idx] });
     try file.seekTo(quotes_ptr[quote_idx]);
     var quote = try std.ArrayList(u8).initCapacity(ally, header.str_longlen + 1);
     // read twice if ptr points to delimiter
