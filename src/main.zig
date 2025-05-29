@@ -38,7 +38,6 @@ fn getRandomQuote(ally: std.mem.Allocator, path: []const u8) ![]const u8 {
 
     // load quote ptr table
     const quotes_ptr = try ally.alloc(u32, header.str_numstr - 1);
-    defer ally.free(quotes_ptr);
     for (quotes_ptr) |*quote| quote.* = try datfile_br.reader().readInt(u32, .big);
     log.debug("quotes table: {d}", .{quotes_ptr});
 
@@ -47,19 +46,20 @@ fn getRandomQuote(ally: std.mem.Allocator, path: []const u8) ![]const u8 {
     log.debug("quote_idx: {d} => {d}", .{ quote_idx, quotes_ptr[quote_idx] });
     try file.seekTo(quotes_ptr[quote_idx]);
     var quote = try std.ArrayList(u8).initCapacity(ally, header.str_longlen + 1);
-    // read twice if ptr points to delimiter
+
+    // read twice (buffered IO so ok) if ptr points to delimiter
     try file_br.reader().streamUntilDelimiter(quote.writer(), header.str_delim, header.str_longlen + 1);
     if (quote.items.len == 0) {
         quote.clearRetainingCapacity();
         try file_br.reader().streamUntilDelimiter(quote.writer(), header.str_delim, header.str_longlen + 1);
     }
-    return quote.toOwnedSlice();
+    return quote.items;
 }
 
 pub fn main() !void {
     // setup allocator
     var arena = std.heap.ArenaAllocator.init(std.heap.smp_allocator);
-    defer arena.deinit();
+    defer arena.deinit(); // short program, free all at the end
     const ally = arena.allocator();
     _ = try ally.alloc(u8, 5 * 1024); // pre allocate 5kb
     _ = arena.reset(.retain_capacity);
@@ -71,12 +71,8 @@ pub fn main() !void {
     };
     defer dir.close();
 
-    // load all path from FORTUNE_PATH
+    // load all path of .dat files from FORTUNE_PATH
     var files = std.ArrayList([]const u8).init(ally);
-    defer {
-        for (files.items) |filepath| ally.free(filepath);
-        files.deinit();
-    }
     var fileit = dir.iterateAssumeFirstIteration();
     while (try fileit.next()) |entry| {
         switch (entry.kind) {
@@ -92,7 +88,6 @@ pub fn main() !void {
     // randomly choose one file and a quote from that file
     const path = files.items[random.intRangeLessThan(usize, 0, files.items.len)];
     const quote = try getRandomQuote(ally, path);
-    defer ally.free(quote);
 
     // print quote
     var out = std.io.bufferedWriter(std.io.getStdOut().writer());
