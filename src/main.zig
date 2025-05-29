@@ -79,7 +79,7 @@ pub fn main() !void {
         for (files.items) |filepath| ally.free(filepath);
         files.deinit();
     }
-    var fileit = dir.iterate();
+    var fileit = dir.iterateAssumeFirstIteration();
     while (try fileit.next()) |entry| {
         switch (entry.kind) {
             .file => {
